@@ -8,19 +8,11 @@ import {
   PieChart, Pie, Cell, Tooltip,
 } from "recharts";
 
-// Hero 卡（顯示距離下一級的差距）
+// 動態圖和HeroCard
 import GapHeroCard from "./GapHeroCard";
 import runnerSimple from "@/assets/Coffee_Run.json";
 import premium from "@/assets/premium.json";
 
-
-/** =========================================================
- *  StudentRecommendationDashboard（強化版）
- *  - 僅在「有意義的值」時才覆蓋 mock
- *  - level 必須符合 CEFR；"unknown"/"N/A"/"-" 一律不採用
- *  - 30 天完成率只有在「確實有修課資料」時才覆蓋
- *  - 升級差距 Hero 卡（小時制/可 DEMO 直達 100%） 
- * ======================================================== */
 
 const ACCENT = "#12B6C8";
 const ACCENT_LIGHT = "#12B6C820";
@@ -177,7 +169,6 @@ function isValidLevel(lv) {
 }
 
 function pickCompletionRate(thirtyDayStats, fallback) {
-  // 1) 先讀 rate，允許 "47"、"47%"、47、0.47
   let rate = thirtyDayStats?.completion_rate_30days;
   if (typeof rate === "string") {
     const m = rate.match(/[\d.]+/);
@@ -465,9 +456,17 @@ export default function StudentRecommendationDashboard({
   const mergedBase = safeMerge(mockProfile, propProfileEffective); // 只在有效時才合併
 
   
-  const finalLevel =
-    (isValidLevel(userDegree) && String(userDegree).toUpperCase()) ||
-    (isValidLevel(mergedBase.level) ? String(mergedBase.level).toUpperCase() : "UNKNOWN");
+
+  // 只在 unknown 時 fallback 到 mock，其他都照後端顯示
+  const backendLevel = typeof userDegree === "string" ? userDegree.trim() : "";
+  const isBackendUnknown = backendLevel === "unknown";
+
+  // 候補：若 mergedBase 沒有等級，就用 mock 的
+  const fallbackLevel = (mergedBase?.level) || mockProfile.level;
+
+  const finalLevel = isBackendUnknown
+  ? fallbackLevel            // 後端是 unknown → 用 mock
+  : (backendLevel || fallbackLevel); // 否則就直接用後端，後端空字串才用候補
     
   // completionRate：只有「有修課資料」才覆蓋
   const finalCompletionRate = pickCompletionRate(
@@ -492,6 +491,8 @@ export default function StudentRecommendationDashboard({
       : (mockProfile.interests || []);
 
 
+  console.log("LEVEL debug ->", { backendLevel, isBackendUnknown, fallbackLevel, finalLevel });
+
   // 最終 profile
   const profile = {
     ...mergedBase,
@@ -514,6 +515,7 @@ export default function StudentRecommendationDashboard({
     const el = document.getElementById("rec-section");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
 
   // // 最終考驗條件   
   // const currentValueForExam = Number(propProfile?.current_value ?? 0);
