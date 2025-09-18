@@ -1,12 +1,14 @@
 // src/App.jsx
+import "./bookmark-tabs.css";
 import { useState, useEffect } from "react";
 import Header from "./Header";
 import ProgressProfileCard from "./components/ProgressProfileCard";
 import ProfileCard from "./components/ProfileCard";
 import StudentRecommendationDashboard from "./components/StudentRecommendationDashboard";
+import ClassInfoCard from "./components/ClassInfoCard";
 
 export default function App() {
-  const [tab, setTab] = useState("overview"); // overview = 學生學習狀況, profile = 個人檔案
+  const [tab, setTab] = useState("profile"); // overview = 學生學習狀況, profile = 個人檔案 , challenge = 挑戰卡, recommend = 為你推薦的課程
   const [studentData, setStudentData] = useState(null); // 後端資料
   const userId = 124; // 範例 user_id，可改成動態 2274978  124 4
 
@@ -41,30 +43,69 @@ const userDegree = studentData?.user_degree || "";
       <Header />
 
       <main className="flex-1 w-full bg-gradient-to-b from-[#F7F7F7] to-[#ECECEC]">
+        
         <div className="max-w-[1200px] mx-auto px-4 py-6 space-y-6">
           {/* 頂部分頁 */}
           <div className="flex flex-wrap gap-2">
+
+            <button
+              onClick={() => setTab("profile")}
+              className={`bm-tab bm--indigo ${tab === "profile" ? "is-active" : ""}`}
+            >
+              
+              個人資訊
+            </button>
+
             <button
               onClick={() => setTab("overview")}
-              className={`px-4 py-2 rounded-2xl border-2 ${
-                tab === "overview"
-                  ? "bg-blue-50 text-blue-700 border-blue-300"
-                  : "bg-white border-slate-200"
-              }`}
+              className={`bm-tab bm--teal ${tab === "overview" ? "is-active" : ""}`}
             >
               學生學習狀況
             </button>
+            
             <button
-              onClick={() => setTab("profile")}
-              className={`px-4 py-2 rounded-2xl border-2 ${
-                tab === "profile"
-                  ? "bg-indigo-50 text-indigo-700 border-indigo-300"
-                  : "bg-white border-slate-200"
-              }`}
+              onClick={() => setTab("challenge")}
+              className={`bm-tab bm--blue ${tab === "challenge" ? "is-active" : ""}`}
             >
-              個人檔案
+              挑戰卡
             </button>
+
+            <button
+              onClick={() => setTab("recommend")}
+              className={`bm-tab bm--amber ${tab === "recommend" ? "is-active" : ""}`}
+            >
+              為你推薦的課程
+            </button>
+
+
           </div>
+
+          {tab === "challenge" && (
+            <section className="bg-white border rounded-2xl shadow-sm">
+              <StudentRecommendationDashboard
+                profile={{ ...(studentData?.profile ?? {}), learn_minutes_total: 30 * 60, required_hours: 60 }}
+                thirtyDayStats={studentData?.thirty_day_stats ?? {}}
+                categoryProgress={studentData?.category_progress ?? []}
+                courseCompletedCount={studentData?.course_completed_count ?? 0}
+                userDegree={studentData?.user_degree ?? ""}
+                view="challenge"   // 只顯示 HeroCard
+                onGoRecommend={() => setTab("recommend")}  // 讓 HeroCard 能切到推薦頁
+              />
+            </section>
+          )}
+
+          {tab === "recommend" && (
+            <section className="bg-white border rounded-2xl shadow-sm">
+              <StudentRecommendationDashboard
+                profile={{ ...(studentData?.profile ?? {}), learn_minutes_total: 30 * 60, required_hours: 60 }}
+                thirtyDayStats={studentData?.thirty_day_stats ?? {}}
+                categoryProgress={studentData?.category_progress ?? []}
+                courseCompletedCount={studentData?.course_completed_count ?? 0}
+                userDegree={studentData?.user_degree ?? ""}
+                view="recommend"   // 只顯示為你推薦清單
+              />
+            </section>
+          )}
 
           {tab === "overview" ? (
             <>
@@ -109,19 +150,21 @@ const userDegree = studentData?.user_degree || "";
                 // 把後端的 profile 展開進來，再覆蓋學習時數欄位
                 profile={{
                   ...(studentData?.profile ?? {}),     // 這裡會帶到 username / firstname / lastname ...
-                  learn_minutes_total: 60 * 60,
+                  learn_minutes_total: 30 * 60,
                   required_hours: 60,
                 }}
                 thirtyDayStats={studentData?.thirty_day_stats ?? {}}
                 categoryProgress={studentData?.category_progress ?? []}
                 courseCompletedCount={studentData?.course_completed_count ?? 0}
                 userDegree={studentData?.user_degree ?? ""}
+                classInfo={studentData?.class_info ?? {}}
+                view="overview"   
               />
           </section>
 
 
             </>
-          ) : (
+          ) : tab === "profile" ? (
             <>
               {/* 個人檔案頁（舊的 ProfileCard） */}
               <ProfileCard
@@ -138,8 +181,11 @@ const userDegree = studentData?.user_degree || "";
                 onUpgradeTeacher={() => alert("升級為教師帳號（示意）")}
                 onEditSchool={() => alert("修改學校（示意）")}
               />
+
+               <ClassInfoCard classInfo={studentData?.class_info ?? {}} />
             </>
-          )}
+          ) : null}
+
         </div>
       </main>
     </div>

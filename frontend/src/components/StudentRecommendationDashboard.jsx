@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Search, TrendingUp, Sparkles, Info, Star, BookOpenCheck, Clock,
-  Filter, ChevronRight, CircleHelp, ListFilter, ArrowUpRight, History
+  Filter, ChevronRight, CircleHelp, ListFilter, ArrowUpRight, History,MousePointerClick 
 } from "lucide-react";
+
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   PieChart, Pie, Cell, Tooltip,
@@ -10,14 +11,14 @@ import {
 
 // 動態圖和HeroCard
 import GapHeroCard from "./GapHeroCard";
-import runnerSimple from "@/assets/Coffee_Run.json";
-import premium from "@/assets/premium.json";
+import runnerSimple from "@/assets/Coffee_Run.json";   //跑跑咖啡杯
+import premium from "@/assets/premium.json"; // 獎盃
 
 
 const ACCENT = "#12B6C8";
 const ACCENT_LIGHT = "#12B6C820";
 
-/* ===== 等級匹配工具 ===== */
+/* ===== 等級匹配 ===== */
 const LEVEL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const CEFR_SET = new Set(LEVEL_ORDER);
 const levelIdx = (lv) => LEVEL_ORDER.indexOf((lv || "").toUpperCase());
@@ -42,7 +43,7 @@ function userFitsCourse(userLevel, courseLabel) {
 
 /** ===== Mock 資料 ===== */
 const mockProfile = {
-  studentName: "來自中原大學的小仇",
+  studentName: "小仇   <---- 這裡要改成秀出學生的學校ex. 來自中原大學的小仇",
   level: "B1",
   interests: ["聽力", "旅遊", "口說"],
   progress: 62,             // 0~100
@@ -426,6 +427,9 @@ export default function StudentRecommendationDashboard({
   onSearch,
   categoryProgress = [],
   onTriggerIntent,
+  view = "dashboard",   // "dashboard" | "challenge" | "recommend"
+  classInfo = {},
+  onGoRecommend,  
 }) {
   // 由 categoryProgress 轉成 skills
   const skillsFromCategory = categoryProgress.reduce((acc, item) => {
@@ -510,12 +514,33 @@ export default function StudentRecommendationDashboard({
 
   const band = bandFromLevel(profile.level);
 
+  const isDashboard    = view === "dashboard";
+  const isChallenge    = view === "challenge";
+  const isRecommend    = view === "recommend";
+  const isOverviewLite = view === "overview-lite";
+
+
+  const showHero         = view === "dashboard" || view === "challenge"; // overview 不顯示
+  const showHeader       = view === "dashboard" || view === "overview"; // overview 不顯示「嗨，…」標題
+  const showSummaryCards = view === "dashboard" || view === "overview";   // 摘要卡
+  const showRadar        = view === "dashboard" || view === "overview";   // 雷達
+  const showDonut        = view === "dashboard" || view === "overview";   // donut
+  const showSearchBar    = view === "dashboard" || view === "recommend";  // overview 不要
+  const showRecs         = view === "dashboard" || view === "recommend";  // overview 不要
+  const showCharts       = view === "dashboard" || view === "overview";
+
+
+
   // 衝刺 → 滾到推薦
   const scrollToRecommendations = () => {
     const el = document.getElementById("rec-section");
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const handleHeroAction = () => {
+    if (showRecs) return scrollToRecommendations();  // 頁面上有推薦 → 捲過去
+    onGoRecommend?.();                               // 沒有推薦區 → 請父層切到推薦頁
+  };
 
   // // 最終考驗條件   
   // const currentValueForExam = Number(propProfile?.current_value ?? 0);
@@ -616,15 +641,21 @@ export default function StudentRecommendationDashboard({
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-8 space-y-6">
       {/* 頂部：個人摘要 */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">嗨，{profile.studentName} </h1>
-          <p className="opacity-70 mt-1">為你整理可解釋的學習推薦清單</p>
+      {showHeader && (
+        <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              嗨，{classInfo?.school_name ? `來自${classInfo.school_name}的` : ""}{profile.studentName}
+            </h1>
+            {view === "dashboard" && (
+              <p className="opacity-70 mt-1">為你整理可解釋的學習推薦清單</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 升級差距 Hero 卡（固定 75%） */}
-      {band?.code !== "C2" && (
+      {/* 升級差距挑戰卡（） */}
+      { showHero && band?.code !== "C2" && (
         <GapHeroCard
           band={band}                    // 顯示 B1→B2 等等
           // ✅ 用「積分制」驅動進度與文案
@@ -640,7 +671,7 @@ export default function StudentRecommendationDashboard({
           characterFootPx={12}
           characterOffsetY={3}
 
-          onActionClick={scrollToRecommendations}
+          onActionClick={handleHeroAction}
           isUnlocked={isUnlocked}
           onGoExam={handleGoExam}
           trophyLottieJson={premium}
@@ -649,6 +680,7 @@ export default function StudentRecommendationDashboard({
       )}
 
       {/* 歷程總覽卡 */}
+      {showSummaryCards && (
       <section className="grid lg:grid-cols-3 gap-4">
         <div className="rounded-2xl border p-5">
           <div className="flex items-center justify-between">
@@ -686,7 +718,7 @@ export default function StudentRecommendationDashboard({
               <p className="text-sm opacity-70">近 7 天點擊</p>
               <p className="text-xl font-semibold">{profile.clickStats?.last7Days ?? 0}</p>
             </div>
-            <History className="size-6" />
+            <MousePointerClick className="size-6" />
           </div>
           <div className="mt-4">
             <p className="text-sm opacity-70">熱門標籤</p>
@@ -696,8 +728,11 @@ export default function StudentRecommendationDashboard({
           </div>
         </div>
       </section>
+      )}
 
+      
       {/* 學習力圖表（雷達 + Donut） */}
+      {(showRadar || showDonut) && (
       <section className="grid md:grid-cols-2 gap-4">
         <div className="rounded-2xl border p-5">
           <div className="flex items-center justify-between mb-3">
@@ -716,6 +751,7 @@ export default function StudentRecommendationDashboard({
           <p className="mt-2 text-xs opacity-70">* 圖表每 1.5 秒依據最新學習紀錄微幅更新（示範）。</p>
         </div>
 
+        {showDonut && (
         <div className="rounded-2xl border p-5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">近 30 天完成率</h3>
@@ -747,9 +783,12 @@ export default function StudentRecommendationDashboard({
           </div>
           <p className="mt-2 text-xs opacity-70">* 初次載入時以平滑動畫遞增至目前值。</p>
         </div>
+         )}
       </section>
+      )}
 
       {/* 搜尋控制列 */}
+      {showSearchBar && (
       <section className="rounded-2xl border p-4 md:p-5 space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <SearchModeTab mode={mode} setMode={setMode} />
@@ -790,8 +829,11 @@ export default function StudentRecommendationDashboard({
           </ShowWithFade>
         )}
       </section>
+      )}
+
 
       {/* 推薦清單 */}
+      {showRecs && (
       <section id="rec-section" className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg md:text-xl font-semibold flex items-center gap-2">
@@ -810,6 +852,7 @@ export default function StudentRecommendationDashboard({
           <ShowMoreRecommendations items={filtered} onOpen={onOpenCourse} initially={2} />
         )}
       </section>
+      )}
     </div>
   );
 }

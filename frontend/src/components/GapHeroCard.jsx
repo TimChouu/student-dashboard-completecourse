@@ -4,10 +4,103 @@ import Lottie from "lottie-react";
 import { Lock } from "lucide-react";
 import flameJson from "@/assets/Fire.json";
 
-
 const ACCENT = "#12B6C8";
 const ACCENT_LIGHT = "#12B6C820";
 const ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
+/* 動態雲層 */
+function CloudLayer({ showSun = false }) {
+  return (
+    <>
+      <style>{`
+        @keyframes cloudFly {
+          0%   { transform: translateX(-40vw) scale(var(--s,1)); }
+          100% { transform: translateX(120vw) scale(var(--s,1)); }
+        }
+
+        .cloud {
+          position: absolute;
+          left: -40vw;
+          width: 220px; height: 80px;
+          background: #fff;
+          border-radius: 9999px;
+          opacity: .92;
+          filter: drop-shadow(0 6px 10px rgba(2,132,199,.10));
+          box-shadow:
+            60px  10px 0 10px #fff,
+            120px -15px 0 12px #fff,
+            170px   5px 0  6px #fff,
+            95px  -25px 0 16px #fff;
+          animation: cloudFly var(--dur,55s) linear infinite;
+          /* 關鍵：負的延遲，讓雲朵一出現就已在畫面中 */
+          animation-delay: var(--delay, -30s);
+          will-change: transform;
+        }
+
+        .cloud--1 { top: 14%; --dur: 55s; --delay: -25s; }
+        .cloud--2 { top: 36%; --s: 1.2; opacity: .88; --dur: 70s; --delay: -45s; }
+        .cloud--3 { top: 66%; --s: .9;  opacity: .84; --dur: 82s; --delay: -65s; }
+
+      `}</style>
+
+
+      <div className="cloud cloud--1" />
+      <div className="cloud cloud--2" />
+      <div className="cloud cloud--3" />
+    </>
+  );
+}
+
+
+/* === 100%時出現金色星星背景 === */
+function StarsBackground() {
+  return (
+    <>
+      <style>{`
+        @keyframes starTwinkle {
+          0%, 100% { opacity: .35; transform: scale(1); }
+          50%      { opacity: .75; transform: scale(1.2); }
+        }
+        .stars-wrap {
+          position: absolute; inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          overflow: hidden;
+        }
+        .star {
+          position: absolute;
+          width: 14px; height: 14px;
+          background: radial-gradient(circle, #fff 0%, #ffeb80 40%, transparent 70%);
+          border-radius: 50%;
+          opacity: .5;
+          animation: starTwinkle 2.8s ease-in-out infinite;
+          filter: drop-shadow(0 0 6px rgba(255, 215, 0, .6));
+        }
+        .star:nth-child(1) { top: 10%; left: 20%; animation-delay: .2s; }
+        .star:nth-child(2) { top: 25%; left: 70%; animation-delay: 1s; }
+        .star:nth-child(3) { top: 40%; left: 50%; animation-delay: 1.5s; }
+        .star:nth-child(4) { top: 60%; left: 30%; animation-delay: .8s; }
+        .star:nth-child(5) { top: 75%; left: 80%; animation-delay: 2s; }
+        .star:nth-child(6) { top: 85%; left: 40%; animation-delay: 2.5s; }
+        .star:nth-child(7) { top: 15%; left: 85%; animation-delay: 1.2s; }
+        .star:nth-child(8) { top: 70%; left: 15%; animation-delay: 1.8s; }
+      `}</style>
+
+      <div className="stars-wrap">
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        <span className="star" />
+        
+      </div>
+    </>
+  );
+}
+
 
 // ---------- utils ----------
 const clamp0100 = (n) => Math.min(100, Math.max(0, Number.isFinite(n) ? n : 0));
@@ -46,7 +139,6 @@ function RunnerProgress({
   const target = clamp0100(value);
   const [pos, setPos] = React.useState(0);
 
-  // 平滑移動
   React.useEffect(() => {
     let raf;
     const from = pos;
@@ -65,7 +157,6 @@ function RunnerProgress({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target]);
 
-  // 角色只初始化一次，避免重播/閃爍
   const CharacterEl = React.useMemo(() => {
     const style = { width: characterSize, height: characterSize };
     if (characterType === "lottie" && characterJson) {
@@ -84,15 +175,15 @@ function RunnerProgress({
   // 幾何：讓腳踩在線
   const trackHeight = 14;
   const containerH = Math.max(64, characterSize + 16);
-  const trackTopY = trackHeight; // 以容器底為 0
+  const trackTopY = trackHeight;
   const runnerBottom = trackTopY - characterFootPx + characterOffsetY;
 
   return (
     <div className={widthClass}>
       <div className="relative select-none" style={{ height: containerH }}>
-        {/* 跑道 */}
+        {/* 跑道：改成在藍天空上更清楚的白底 */}
         <div
-          className="absolute left-0 right-0 rounded-full bg-gray-200 overflow-hidden"
+          className="absolute left-0 right-0 rounded-full bg-white/80 overflow-hidden ring-2 ring-[#12B6C8]/55 ring-inset"
           style={{ bottom: 0, height: trackHeight }}
         >
           <div className="h-full" style={{ width: `${pos}%`, background: accent }} />
@@ -100,7 +191,7 @@ function RunnerProgress({
             className="absolute inset-0 opacity-20 pointer-events-none"
             style={{
               backgroundImage:
-                "repeating-linear-gradient(90deg, transparent 0 12px, rgba(0,0,0,.08) 12px 16px)",
+                "repeating-linear-gradient(90deg, transparent 0 12px, rgba(0,0,0,.07) 12px 16px)",
             }}
           />
         </div>
@@ -128,15 +219,14 @@ function RunnerProgress({
   );
 }
 
-// ---------- 主卡片（更均衡排版） ----------
+// ---------- 主卡片 ----------
 export default function GapHeroCard({
-  currentValue,                 // 0–100（在本級距中的分數）
-  band,                         // { code, lower, next }
+  currentValue,
+  band,
   onActionClick,
-  percentOverride,              // 直接指定 0–100 的百分比
+  percentOverride,
 
-
-   //若達到100%時顯示Lottie獎盃
+  // 若達到100%時顯示Lottie獎盃
   trophyLottieJson,
   trophySize = 140,
   trophyLoop = true,
@@ -151,169 +241,194 @@ export default function GapHeroCard({
   characterOffsetY,
   characterFootPx,
 
-  pointsEarned,                 // 已累積分數（由上課時數換算）
-  pointsGoal,                   // 升級門檻分數
+  pointsEarned,
+  pointsGoal,
   pointsUnit = "分",
-  displayDecimals = 0,   
+  displayDecimals = 0,
 
   hideIfNoScore = true,
   isUnlocked = false,
   onGoExam,
-
 }) {
   if (!band || !band.code) return null;
 
-    const hasPointsMode = Number.isFinite(pointsEarned) && Number.isFinite(pointsGoal);
-    const hasCurrent = Number.isFinite(currentValue);
-    const hasOverride = Number.isFinite(percentOverride);
-    if (!hasPointsMode && !hasCurrent && !hasOverride && hideIfNoScore) return null;
+  const hasPointsMode = Number.isFinite(pointsEarned) && Number.isFinite(pointsGoal);
+  const hasCurrent = Number.isFinite(currentValue);
+  const hasOverride = Number.isFinite(percentOverride);
+  if (!hasPointsMode && !hasCurrent && !hasOverride && hideIfNoScore) return null;
 
-    let percent, shownPoints, remain, goalPoints;
+  let percent, shownPoints, remain, goalPoints;
 
-    const fmt = (v) => {
-      const f = Number(v) || 0;
-      if (displayDecimals <= 0 ) 
-        return String(Math.round(f));
-      const p = 10 ** displayDecimals;
-      return String(Math.round(f * p) / p);
-    };
+  const fmt = (v) => {
+    const f = Number(v) || 0;
+    if (displayDecimals <= 0) return String(Math.round(f));
+    const p = 10 ** displayDecimals;
+    return String(Math.round(f * p) / p);
+  };
 
-    if (hasPointsMode) {
-      goalPoints  = Math.max(1, num(pointsGoal, 1));
-      shownPoints = Math.max(0, num(pointsEarned, 0));
-      percent     = clamp0100((shownPoints / goalPoints) * 100);
-      remain      = Math.max(0, Math.ceil(goalPoints - shownPoints));
-    } else {
-      // 舊：以 CEFR_BOUNDS 區間計算
-      const lower = num(band.lower, 0);
-      const next  = num(band.next, 100);
-      const cur   = clamp0100(num(currentValue, 0));
-      const autoPercent =
-        next - lower > 0 ? clamp0100(((cur - lower) / (next - lower)) * 100) : 100;
-      percent =
-        percentOverride != null ? clamp0100(num(percentOverride, 0)) : autoPercent;
-      shownPoints = lower + (next - lower) * (percent / 100);
-      goalPoints  = next;
-      remain      = Math.max(0, goalPoints - shownPoints);
+  if (hasPointsMode) {
+    goalPoints = Math.max(1, num(pointsGoal, 1));
+    shownPoints = Math.max(0, num(pointsEarned, 0));
+    percent = clamp0100((shownPoints / goalPoints) * 100);
+    remain = Math.max(0, Math.ceil(goalPoints - shownPoints));
+  } else {
+    const lower = num(band.lower, 0);
+    const next = num(band.next, 100);
+    const cur = clamp0100(num(currentValue, 0));
+    const autoPercent =
+      next - lower > 0 ? clamp0100(((cur - lower) / (next - lower)) * 100) : 100;
+    percent = percentOverride != null ? clamp0100(num(percentOverride, 0)) : autoPercent;
+    shownPoints = lower + (next - lower) * (percent / 100);
+    goalPoints = next;
+    remain = Math.max(0, goalPoints - shownPoints);
   }
 
   const reached = percent >= 100;
-
   const nextIdx = ORDER.indexOf(String(band.code || "").toUpperCase());
   const currentCode = nextIdx > 0 ? ORDER[nextIdx - 1] : ORDER[0];
   const ladderText = `${currentCode}→${band.code}`;
-
-  const isComplete = isUnlocked || percent >= 100; // 滿100%就視為完成
+  const isComplete = isUnlocked || percent >= 100;
 
   return (
-    <section
-      className="rounded-[28px] border-4 md:border-[5px] border-black p-6 md:p-8"
-    style={{ background: "#FFFBEB" }}
-    >
-      <div className="grid gap-8 md:grid-cols-12 items-center">
-        {/* 左側：標題 + 主訊息 + 數值 Pill + CTA */}
-        <div className="md:col-span-7 lg:col-span-7 text-gray-900">
+      <section
+        className={`
+          relative overflow-hidden rounded-[28px]
+          p-6 md:p-8
+          shadow-[0_10px_30px_rgba(2,132,199,.18)]
+          ${isComplete
+            ? "bg-gradient-to-br from-amber-200 via-yellow-300 to-amber-400" // ← 這行改了
+            : "bg-gradient-to-b from-sky-200 via-sky-100 to-sky-200"}
+        `}
+      >
 
-          <h2 className="mt-1 text-3xl md:text-4xl font-black tracking-tight">
-            {isComplete ? <>目標達成 {band.code}</> : <>目標 {band.code}</>}
-          </h2>
-          
-          {isComplete ? (
-            <p className="mt-3 text-lg md:text-xl leading-relaxed">
-              <span className="font-extrabold" style={{ color: ACCENT }}>恭喜你達成時數！</span>{" "}
-              接下來就用「升級考驗」來測試你的真正實力吧！
-            </p>
-          ) : (
-            <p className="mt-3 text-lg md:text-xl leading-relaxed">
-                你已累積 <span className="font-extrabold" style={{ color: ACCENT }}>
+      {/* 背景雲層 */}
+      {!isComplete ? <CloudLayer /> : <StarsBackground />}
+
+      
+      {/* 正文（避免被雲遮住） */}
+      <div className="relative z-10">
+        <div className="grid gap-8 md:grid-cols-12 items-center text-slate-900">
+          {/* 左側：標題 + 主訊息 + 數值 Pill + CTA */}
+          <div className="md:col-span-7 lg:col-span-7">
+            <h2 className="mt-1 text-3xl md:text-4xl font-black tracking-tight">
+              {isComplete ? <>目標達成 {band.code}</> : <>目標 {band.code}</>}
+            </h2>
+
+            {isComplete ? (
+              <p className="mt-3 text-lg md:text-xl leading-relaxed">
+                <span className="font-extrabold" style={{ color: ACCENT }}>
+                  恭喜你達成時數！
+                </span>{" "}
+                接下來就用「升級考驗」來測試你的真正實力吧！
+              </p>
+            ) : (
+              <p className="mt-3 text-lg md:text-xl leading-relaxed">
+                你已累積{" "}
+                <span className="font-extrabold" style={{ color: ACCENT }}>
                   {fmt(shownPoints)}
-                </span>{pointsUnit} / 目標{" "}
+                </span>
+                {pointsUnit} / 目標{" "}
                 <span className="font-extrabold" style={{ color: ACCENT }}>
                   {fmt(goalPoints)}
-                </span>{pointsUnit}（{Math.round(percent)}%），再累積{" "}
+                </span>
+                {pointsUnit}（{Math.round(percent)}%），再累積{" "}
                 <span className="font-extrabold" style={{ color: ACCENT }}>
                   {fmt(remain)}
-                </span>{pointsUnit} 解鎖升級挑戰!
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Pill>已累積 <strong>{fmt(shownPoints)}</strong> / <strong>{fmt(goalPoints)}</strong> {pointsUnit}</Pill>
-            {!isComplete && <Pill>差距 <strong>{fmt(remain)}</strong> {pointsUnit}</Pill>}
-          </div>
-          
-          <div className="mt-6 flex flex-wrap gap-3">
-            {/* 立即衝刺 */}
-            {!isComplete && (
-            <button
-              onClick={onActionClick}
-              className="px-6 py-3 rounded-2xl font-extrabold text-white shadow-md hover:shadow-lg transition"
-              style={{ background: ACCENT, boxShadow: `0 6px 0 ${ACCENT_LIGHT}` }}
-            >
-              立刻衝刺！！
-            </button>
+                </span>
+                {pointsUnit} 解鎖升級挑戰!
+              </p>
             )}
-            {/* 進入升級考驗 */}
-            <button
-              onClick={isUnlocked ? onGoExam : undefined}
-              disabled={!isUnlocked}
-              className={`px-6 py-3 rounded-2xl font-extrabold transition inline-flex items-center gap-2 ${
-                isUnlocked
-                  ? "text-white shadow-md hover:shadow-lg"
-                  : "opacity-60 cursor-not-allowed bg-gray-100 text-gray-600 border-gray-200"
-              }`}
-              style={isUnlocked ? { background: "linear-gradient(135deg, #F97316 0%, #FDBA74 100%)", boxShadow: `0 6px 0 ${ACCENT_LIGHT}` } : {}}
-            >
-              {isUnlocked ? (
-              // 用 Lottie 的火焰圖
-              <span className="inline-flex items-center justify-center pointer-events-none"
-                    style={{ width: 24, height: 24, filter: "drop-shadow(0 0 6px rgba(255,160,0,.75))" }}>
-                <Lottie
-                  animationData={flameJson}
-                  loop
-                  autoplay
-                  style={{ width: 24, height: 24 }}
-                />
-              </span>
-            ) : (
-              <Lock className="size-5" />
-            )}
-            進入升級考驗！
-            </button>
 
-          </div>
-
-        </div>
-
-        {/* 右側：進度條 + 角色 */}
-        <div className="md:col-span-5 lg:col-span-5">
-          {isComplete ? (
-            // ✅ 完成：只顯示獎盃 Lottie
-            <div className="h-[120px] flex items-center justify-end">
-              {trophyLottieJson && (
-                <Lottie
-                  animationData={trophyLottieJson}
-                  loop={trophyLoop}
-                  autoplay
-                  style={{ width: trophySize, height: trophySize }}
-                />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Pill>
+                已累積 <strong>{fmt(shownPoints)}</strong> /{" "}
+                <strong>{fmt(goalPoints)}</strong> {pointsUnit}
+              </Pill>
+              {!isComplete && (
+                <Pill>
+                  差距 <strong>{fmt(remain)}</strong> {pointsUnit}
+                </Pill>
               )}
             </div>
-          ) : (
-          <RunnerProgress
-            value={percent}
-            accent={ACCENT}
-            characterType={characterType}
-            characterJson={characterJson}
-            characterSrc={characterSrc}
-            characterSize={characterSize}
-            characterAnchorX={characterAnchorX}
-            characterOffsetX={characterOffsetX}
-            characterOffsetY={characterOffsetY}
-            characterFootPx={characterFootPx}
-            showPercent
-          />
-          )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {/* 立即衝刺 */}
+              {!isComplete && (
+                <button
+                  onClick={onActionClick}
+                  className="px-6 py-3 rounded-2xl font-extrabold text-white shadow-md hover:shadow-lg transition"
+                  style={{ background: ACCENT, boxShadow: `0 6px 0 ${ACCENT_LIGHT}` }}
+                >
+                  立刻衝刺！！
+                </button>
+              )}
+              {/* 進入升級考驗 */}
+              <button
+                onClick={isUnlocked ? onGoExam : undefined}
+                disabled={!isUnlocked}
+                className={`px-6 py-3 rounded-2xl font-extrabold transition inline-flex items-center gap-2 ${
+                  isUnlocked
+                    ? "text-white shadow-md hover:shadow-lg"
+                    : "opacity-60 cursor-not-allowed bg-gray-100 text-gray-600 border-gray-200"
+                }`}
+                style={
+                  isUnlocked
+                    ? {
+                        background:
+                          "linear-gradient(135deg, #F97316 0%, #FDBA74 100%)",
+                        boxShadow: `0 6px 0 ${ACCENT_LIGHT}`,
+                      }
+                    : {}
+                }
+              >
+                {isUnlocked ? (
+                  <span
+                    className="inline-flex items-center justify-center pointer-events-none"
+                    style={{
+                      width: 24,
+                      height: 24,
+                      filter: "drop-shadow(0 0 6px rgba(255,160,0,.75))",
+                    }}
+                  >
+                    <Lottie animationData={flameJson} loop autoplay style={{ width: 24, height: 24 }} />
+                  </span>
+                ) : (
+                  <Lock className="size-5" />
+                )}
+                進入升級考驗！
+              </button>
+            </div>
+          </div>
+
+          {/* 右側：進度條 + 角色 / 或獎盃 */}
+          <div className="md:col-span-5 lg:col-span-5">
+            {isComplete ? (
+              <div className="h-[120px] flex items-center justify-end">
+                {trophyLottieJson && (
+                  <Lottie
+                    animationData={trophyLottieJson}
+                    loop={trophyLoop}
+                    autoplay
+                    style={{ width: trophySize, height: trophySize }}
+                  />
+                )}
+              </div>
+            ) : (
+              <RunnerProgress
+                value={percent}
+                accent={ACCENT}
+                characterType={characterType}
+                characterJson={characterJson}
+                characterSrc={characterSrc}
+                characterSize={characterSize}
+                characterAnchorX={characterAnchorX}
+                characterOffsetX={characterOffsetX}
+                characterOffsetY={characterOffsetY}
+                characterFootPx={characterFootPx}
+                showPercent
+              />
+            )}
+          </div>
         </div>
       </div>
     </section>

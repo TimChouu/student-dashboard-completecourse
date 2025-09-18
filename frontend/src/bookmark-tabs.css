@@ -1,0 +1,72 @@
+/* 書籤 Tabs 容器（讓三角形能壓在內容卡片上方） */
+.bm-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* 基本書籤按鈕 */
+.bm-tab {
+  --bm-accent: #12B6C8;            /* 邊框/重點色 */
+  --bm-bg-active: #EAFBFD;         /* 被選中底色 */
+  --bm-fg-active: #0f6d77;         /* 被選中文字色 */
+
+  position: relative;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  color: #334155;                  /* slate-700 */
+  border-radius: 14px 14px 0 0;    /* 只有上圓角，像書籤 */
+  padding: 8px 14px;
+  line-height: 1;
+  font-weight: 600;
+  transition: all .22s ease;
+}
+
+.bm-tab:hover {
+  transform: translateY(-1px);
+}
+
+.bm-tab:focus-visible {
+  outline: 3px solid var(--bm-accent);
+  outline-offset: 2px;
+}
+
+/* 被選中的書籤：變色、變長 */
+.bm-tab.is-active {
+  border-color: var(--bm-accent);
+  background: var(--bm-bg-active);
+  color: var(--bm-fg-active);
+  padding: 12px 22px;              /* 變長／變厚 */
+  z-index: 2;                      /* 壓在內容卡片上面 */
+}
+
+/* 書籤小三角：外層（邊框色） */
+.bm-tab.is-active::before,
+.bm-tab.is-active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  pointer-events: none;
+}
+.bm-tab.is-active::before {
+  bottom: -12px;
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 12px solid var(--bm-accent);
+}
+/* 書籤小三角：內層（與底色一致，做出邊框感） */
+.bm-tab.is-active::after {
+  bottom: -10px;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid var(--bm-bg-active);
+}
+
+/* 顏色變體（可選）——想讓每個分頁有不同色就加這些 class */
+.bm--indigo { --bm-accent:#6366F1; --bm-bg-active:#EEF2FF; --bm-fg-active:#3730A3; }
+.bm--blue   { --bm-accent:#3B82F6; --bm-bg-active:#EFF6FF; --bm-fg-active:#1D4ED8; }
+.bm--teal   { --bm-accent:#14B8A6; --bm-bg-active:#ECFEFF; --bm-fg-active:#0F766E; }
+.bm--amber  { --bm-accent:#F59E0B; --bm-bg-active:#FFFBEB; --bm-fg-active:#92400E; }
